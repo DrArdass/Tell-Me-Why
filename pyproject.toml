@@ -1,0 +1,38 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tell-me-why"
+version = "0.0.1"
+description = "nbdev library to graft custom classifiers onto an adversarial autoencoder and inspect its latent space."
+readme = "README.md"
+requires-python = ">=3.10,<3.13"
+authors = [{ name = "Tell Me Why contributors" }]
+license = { text = "MIT" }
+keywords = ["nbdev", "pytorch", "adversarial-autoencoder", "classifier", "latent-space"]
+dependencies = [
+    "torch>=2.0",
+    "torchvision>=0.15",
+    "fastai>=2.7.13",
+    "pytorch-msssim>=1.0",
+    "numpy>=1.23",
+    "matplotlib>=3.7",
+    "scikit-learn>=1.2",
+    "seaborn>=0.12",
+]
+
+[project.optional-dependencies]
+dev = [
+    "nbdev>=2.3",
+    "jupyter>=1.0",
+    "ipykernel>=6.0",
+    "pytest>=7.0",
+]
+
+[tool.setuptools.packages.find]
+include = ["tell_me_why*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]

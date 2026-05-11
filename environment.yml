@@ -1,0 +1,23 @@
+name: tell-me-why
+channels:
+  - fastai
+  - pytorch
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.10
+  - pytorch
+  - torchvision
+  - torchaudio
+  - fastai=2.7.13
+  - fastcore
+  - matplotlib
+  - numpy
+  - scikit-learn
+  - seaborn
+  - pip
+  - pip:
+      - nbdev>=2.3
+      - pytorch-msssim>=1.0
+      - ipykernel>=6.0
+      - pytest>=7.0
