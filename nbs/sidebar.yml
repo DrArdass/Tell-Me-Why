@@ -1,0 +1,10 @@
+website:
+  sidebar:
+    contents:
+      - index.ipynb
+      - 00_init.ipynb
+      - 01_model_aae.ipynb
+      - 02_feature_scores.ipynb
+      - 03_graft_classifier.ipynb
+      - 04_visualization.ipynb
+      - 05_tutorial.ipynb

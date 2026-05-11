@@ -13,11 +13,11 @@ authors = [{name = "Tell Me Why contributors"}]
 keywords = ['nbdev', 'pytorch', 'adversarial-autoencoder', 'classifier', 'latent-space']
 classifiers = ["Natural Language :: English", "Intended Audience :: Developers", "Development Status :: 3 - Alpha", "Programming Language :: Python :: 3", "Programming Language :: Python :: 3 :: Only"]
 dependencies = [
-    "torch>=2.0",
-    "torchvision>=0.15",
-    "fastai>=2.7.13",
+    "torch>=2.4",
+    "torchvision>=0.19",
+    "fastai>=2.8.7",
     "pytorch-msssim>=1.0",
-    "numpy>=1.23",
+    "numpy>=1.23,<2",
     "matplotlib>=3.7",
     "scikit-learn>=1.2",
     "seaborn>=0.12",
