@@ -32,6 +32,7 @@ Commandes nbdev utiles:
 
 ```bash
 nbdev-export
+nbdev-prepare
 nbdev-test
 nbdev-preview
 ```
@@ -115,7 +116,25 @@ fig, ax = plot_feature_distributions(features.latents, max_features=8)
 
 ## Structure nbdev
 
-- `nbs/`: notebooks source nbdev.
-- `tell_me_why/fastai_aae.py`: intégration dédiée à `modelAAE_DROPOUT.py`.
-- `tell_me_why/`: paquet Python exporté par nbdev.
+Règle de travail: on modifie d'abord les notebooks dans `nbs/`, puis on lance
+`nbdev-export`. Les fichiers `tell_me_why/*.py` sont générés et ne doivent pas
+être édités directement.
+
+- `nbs/00_source.ipynb`: source officielle GitHub, branche `Arda`, import dynamique du modèle.
+- `nbs/01_config.ipynb`: dataclasses de configuration et résultats.
+- `nbs/02_tensors.ipynb`: helpers de conversion et déplacement des tenseurs.
+- `nbs/03_adapters.ipynb`: adapters PyTorch génériques.
+- `nbs/04_graft.ipynb`: greffe du classifieur et création du `Learner` fastai.
+- `nbs/05_callbacks.ipynb`: callbacks fastai pour collecter `zi`.
+- `nbs/06_latent.ipynb`: extraction de l'espace latent.
+- `nbs/07_features.ipynb`: extraction des features internes de l'AAE.
+- `nbs/08_plots.ipynb`: visualisations latent/features.
+- `nbs/09_tutorial.ipynb`: exemple d'utilisation sans export.
+- `nbs/90_core_compat.ipynb`, `91_fastai_aae_compat.ipynb`, `92_visualization_compat.ipynb`: façades de compatibilité exportées.
+- `nbs/99_init.ipynb`: API publique exportée dans `tell_me_why/__init__.py`.
+- `tell_me_why/`: paquet Python exporté par nbdev depuis les notebooks.
 - `tests/`: tests rapides de l'API publique.
+
+Cette organisation suit le principe visible dans FasterAI de Nathan Hubens:
+un module court par responsabilité, puis une API publique simple ré-exportée à
+la racine du package.

@@ -23,8 +23,11 @@ jobs:
       - name: Install package
         run: python -m pip install -e ".[dev]"
 
-      - name: Check nbdev notebooks and exports
-        run: nbdev-prepare
+      - name: Export nbdev notebooks
+        run: nbdev-export
+
+      - name: Test nbdev notebooks
+        run: nbdev-test --n_workers 0
 
       - name: Run tests
         run: pytest -q

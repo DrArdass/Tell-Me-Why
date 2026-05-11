@@ -14,5 +14,6 @@ dist/
 .mypy_cache/
 .ruff_cache/
 .ipynb_checkpoints/
+_proc/
 _docs/
 site/

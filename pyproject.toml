@@ -1,16 +1,17 @@
 [build-system]
-requires = ["setuptools>=68", "wheel"]
+requires = ["setuptools>=64"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "tell-me-why"
-version = "0.0.1"
-description = "nbdev library to graft custom classifiers onto an adversarial autoencoder and inspect its latent space."
+dynamic = ["version"]
+description = "Graft custom classifiers onto an adversarial autoencoder and visualize latent/features spaces."
 readme = "README.md"
 requires-python = ">=3.10,<3.13"
-authors = [{ name = "Tell Me Why contributors" }]
-license = { text = "MIT" }
-keywords = ["nbdev", "pytorch", "adversarial-autoencoder", "classifier", "latent-space"]
+license = {text = "MIT"}
+authors = [{name = "Tell Me Why contributors", email = ""}]
+keywords = ['nbdev', 'pytorch', 'adversarial-autoencoder', 'classifier', 'latent-space']
+classifiers = ["Natural Language :: English", "Intended Audience :: Developers", "Development Status :: 3 - Alpha", "Programming Language :: Python :: 3", "Programming Language :: Python :: 3 :: Only"]
 dependencies = [
     "torch>=2.0",
     "torchvision>=0.15",
@@ -22,13 +23,23 @@ dependencies = [
     "seaborn>=0.12",
 ]
 
+[project.urls]
+Repository = "https://github.com/DrArdass/Tell-Me-Why"
+Documentation = "https://DrArdass.github.io/Tell-Me-Why"
+
+[project.entry-points.nbdev]
+tell_me_why = "tell_me_why._modidx:d"
+
 [project.optional-dependencies]
 dev = [
-    "nbdev>=2.3",
+    "nbdev>=3.0",
     "jupyter>=1.0",
     "ipykernel>=6.0",
     "pytest>=7.0",
 ]
+
+[tool.setuptools.dynamic]
+version = {attr = "tell_me_why.__version__"}
 
 [tool.setuptools.packages.find]
 include = ["tell_me_why*"]
@@ -36,3 +47,15 @@ include = ["tell_me_why*"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
+
+[tool.nbdev]
+title = 'Tell Me Why'
+lib_path = "tell_me_why"
+nbs_path = "nbs"
+doc_path = "_docs"
+recursive = true
+branch = "main"
+doc_host = "https://DrArdass.github.io"
+doc_baseurl = "/Tell-Me-Why"
+git_url = "https://github.com/DrArdass/Tell-Me-Why"
+put_version_in_init = true
