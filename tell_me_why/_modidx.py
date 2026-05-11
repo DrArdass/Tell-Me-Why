@@ -2,8 +2,8 @@
 
 d = { 'settings': { 'branch': 'main',
                 'doc_baseurl': '/Tell-Me-Why',
-                'doc_host': 'https://DrArdass.github.io',
-                'git_url': 'https://github.com/DrArdass/Tell-Me-Why',
+                'doc_host': 'https://tell-me-why-xai.github.io',
+                'git_url': 'https://github.com/Tell-Me-Why-xAI/Tell-Me-Why',
                 'lib_path': 'tell_me_why'},
   'syms': { 'tell_me_why.feature_scores': {},
             'tell_me_why.graft_classifier': {},
