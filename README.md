@@ -4,7 +4,9 @@ Librairie nbdev/fastai pour greffer un classifieur fourni par un développeur su
 ton AAE `modelAAE_DROPOUT.py`, puis inspecter l'espace latent gaussien et les
 features produites.
 
-La librairie s'appuie explicitement sur le modèle situé ici par défaut:
+La source officielle du modèle est la branche `Arda` du repo
+[`LucaLaFisca/Human-Centered-xAI`](https://github.com/LucaLaFisca/Human-Centered-xAI/tree/Arda).
+La librairie cherche par défaut le clone local frère:
 
 ```text
 ../Human-Centered-xAI/modelAAE_DROPOUT.py
@@ -29,9 +31,25 @@ fastai 2.7, PyTorch/torchvision, `pytorch-msssim` et nbdev.
 Commandes nbdev utiles:
 
 ```bash
-nbdev_export
-nbdev_test
-nbdev_preview
+nbdev-export
+nbdev-test
+nbdev-preview
+```
+
+Si le repo `Human-Centered-xAI` n'est pas déjà cloné à côté:
+
+```bash
+git clone --branch Arda --single-branch \
+  https://github.com/LucaLaFisca/Human-Centered-xAI.git \
+  ../Human-Centered-xAI
+```
+
+Ou depuis Python:
+
+```python
+from tell_me_why import ensure_human_centered_xai_repo
+
+ensure_human_centered_xai_repo()
 ```
 
 ## Greffer un classifieur fastai

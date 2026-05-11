@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import importlib.util
 import os
+import subprocess
 import sys
 from dataclasses import asdict, dataclass
 from pathlib import Path
@@ -14,8 +15,12 @@ import torch
 from torch import Tensor, nn
 
 
+HUMAN_CENTERED_XAI_REPO_URL = "https://github.com/LucaLaFisca/Human-Centered-xAI.git"
+HUMAN_CENTERED_XAI_BRANCH = "Arda"
+HUMAN_CENTERED_XAI_MODEL_FILE = "modelAAE_DROPOUT.py"
+DEFAULT_HUMAN_CENTERED_XAI_REPO = Path(__file__).resolve().parents[2] / "Human-Centered-xAI"
 DEFAULT_HUMAN_CENTERED_XAI_MODEL = (
-    Path(__file__).resolve().parents[2] / "Human-Centered-xAI" / "modelAAE_DROPOUT.py"
+    DEFAULT_HUMAN_CENTERED_XAI_REPO / HUMAN_CENTERED_XAI_MODEL_FILE
 )
 
 
@@ -54,17 +59,51 @@ class HumanCenteredFeatures:
     reconstruction: Tensor | None = None
 
 
+def ensure_human_centered_xai_repo(
+    target_dir: str | Path | None = None,
+    *,
+    repo_url: str = HUMAN_CENTERED_XAI_REPO_URL,
+    branch: str = HUMAN_CENTERED_XAI_BRANCH,
+    update: bool = False,
+) -> Path:
+    """Clone or optionally update the official Human-Centered-xAI branch."""
+
+    path = Path(target_dir).expanduser().resolve() if target_dir else DEFAULT_HUMAN_CENTERED_XAI_REPO
+    if path.exists():
+        if update:
+            subprocess.run(["git", "fetch", "origin", branch], cwd=path, check=True)
+            subprocess.run(["git", "checkout", branch], cwd=path, check=True)
+            subprocess.run(["git", "pull", "--ff-only", "origin", branch], cwd=path, check=True)
+        return path
+
+    subprocess.run(
+        ["git", "clone", "--branch", branch, "--single-branch", repo_url, str(path)],
+        check=True,
+    )
+    return path
+
+
 def resolve_human_centered_aae_path(model_path: str | Path | None = None) -> Path:
     """Resolve the absolute path to `modelAAE_DROPOUT.py`."""
 
     if model_path is None:
         model_path = os.getenv("HUMAN_CENTERED_XAI_MODEL_PATH")
-    path = Path(model_path) if model_path is not None else DEFAULT_HUMAN_CENTERED_XAI_MODEL
+    if model_path is not None:
+        path = Path(model_path)
+    else:
+        repo_dir = os.getenv("HUMAN_CENTERED_XAI_REPO_DIR")
+        path = (
+            Path(repo_dir).expanduser() / HUMAN_CENTERED_XAI_MODEL_FILE
+            if repo_dir
+            else DEFAULT_HUMAN_CENTERED_XAI_MODEL
+        )
     path = path.expanduser().resolve()
     if not path.exists():
         raise FileNotFoundError(
             "Cannot find modelAAE_DROPOUT.py. Pass `model_path` or set "
-            "`HUMAN_CENTERED_XAI_MODEL_PATH`."
+            "`HUMAN_CENTERED_XAI_MODEL_PATH`. Official source: "
+            f"{HUMAN_CENTERED_XAI_REPO_URL} branch `{HUMAN_CENTERED_XAI_BRANCH}`. "
+            "You can clone it with `ensure_human_centered_xai_repo()`."
         )
     return path
 
