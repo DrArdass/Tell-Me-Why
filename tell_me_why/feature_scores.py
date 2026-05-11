@@ -35,6 +35,8 @@ def _read_grayscale_image(image_path: ImagePath, image_size: tuple[int, int] | N
     img = read_image(str(image_path), mode=ImageReadMode.GRAY).float() / 255.0
     if image_size is not None:
         img = TF.resize(img, list(image_size), antialias=True)
+    if img.shape[0] > 1:
+        img = TF.rgb_to_grayscale(img[:3])
     return img
 
 
@@ -296,7 +298,16 @@ def compute_fft_scores(
     the remaining high-frequency energy divided by total FFT magnitude energy.
     """
     def scorer(path: Path) -> float:
-        img = _read_grayscale_image(path, image_size=image_size).squeeze(0)
+        img = _read_grayscale_image(path, image_size=image_size)
+        if img.ndim == 3:
+            if img.shape[0] > 1:
+                img = TF.rgb_to_grayscale(img[:3])
+            img = img.squeeze(0)
+        else:
+            img = img.squeeze()
+        if img.ndim != 2:
+            raise ValueError(f"Expected a 2D grayscale image for FFT, got shape {tuple(img.shape)}")
+
         fshift = torch.fft.fftshift(torch.fft.fft2(img))
         magnitude_spectrum = torch.abs(fshift)
 
