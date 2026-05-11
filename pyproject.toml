@@ -59,3 +59,4 @@ doc_host = "https://tell-me-why-xai.github.io"
 doc_baseurl = "/Tell-Me-Why"
 git_url = "https://github.com/Tell-Me-Why-xAI/Tell-Me-Why"
 put_version_in_init = true
+custom_sidebar = true
