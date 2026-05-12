@@ -20,7 +20,7 @@ from pytorch_msssim import ms_ssim
 class AAE(nn.Module):
     """Adversarial autoencoder used by xAAEnet.
 
-    The model encodes an image into a latent vector `zi`, predicts class logits
+    The model encodes an image into a latent vector `z`, predicts class logits
     from this latent space, regularizes the latent distribution with an
     adversarial discriminator, and reconstructs the input image with a U-Net
     decoder.
@@ -32,7 +32,7 @@ class AAE(nn.Module):
     input_channels : int, default=3
         Number of input image channels.
     encoding_dims : int, default=128
-        Dimension of the latent representation `zi`.
+        Dimension of the latent representation `z`.
     classes : int, default=2
         Number of output classes for the classifier head.
     gen_train : bool, default=True
@@ -87,8 +87,8 @@ class AAE(nn.Module):
         self.bn_crit1 = nn.BatchNorm1d(num_features=64)
         self.bn_crit2 = nn.BatchNorm1d(num_features=16)
 
-    def latent_gan(self, zi: Tensor) -> Tensor:
-        x = F.leaky_relu(self.bn_crit1(self.fc_crit1(zi)), negative_slope=0.2)
+    def latent_gan(self, z: Tensor) -> Tensor:
+        x = F.leaky_relu(self.bn_crit1(self.fc_crit1(z)), negative_slope=0.2)
         x = F.leaky_relu(self.bn_crit2(self.fc_crit2(x)),  negative_slope=0.2)
         x = torch.sigmoid(self.fc_crit3(x)) 
         return x
@@ -157,18 +157,18 @@ class AAE(nn.Module):
         # STEP 2: AAE BOTTLENECK
         # =========================================================
         flat = self.flatten(feats)
-        self.zi = F.leaky_relu(self.bn_lin(self.fc_encode(flat)), negative_slope=0.2)
+        self.z = F.leaky_relu(self.bn_lin(self.fc_encode(flat)), negative_slope=0.2)
         
-        labels = self.linear(self.zi)
+        labels = self.linear(self.z)
         
-        self.gan_fake = self.latent_gan(self.zi)
-        z_random = torch.randn_like(self.zi)
+        self.gan_fake = self.latent_gan(self.z)
+        z_random = torch.randn_like(self.z)
         self.gan_real = self.latent_gan(z_random)
 
         # =========================================================
         # STEP 3: DECODER
         # =========================================================
-        z_spatial = F.relu(self.decoder_fc(self.zi))
+        z_spatial = F.relu(self.decoder_fc(self.z))
         z_spatial = z_spatial.view(-1, 512, 8, 8) 
         
         out = TensorBase(z_spatial)

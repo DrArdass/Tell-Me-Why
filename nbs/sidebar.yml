@@ -6,21 +6,21 @@ website:
       - 01_model_aae.ipynb
       - section: "Feature scores"
         contents:
-          - text: "Vue d'ensemble"
+          - text: "Overview"
             href: feature_scores.html
-          - text: "Mapping learner"
+          - text: "Learner mapping"
             href: feature_scores.html#feature-scores-mapping
-          - text: "Intensité"
+          - text: "Intensity"
             href: feature_scores.html#feature-scores-intensity
-          - text: "Couleur"
+          - text: "Color"
             href: feature_scores.html#feature-scores-color
           - text: "Spatial"
             href: feature_scores.html#feature-scores-spatial
-          - text: "Fréquence"
+          - text: "Frequency"
             href: feature_scores.html#feature-scores-frequency
-          - text: "Catalogue"
+          - text: "Catalog"
             href: feature_scores.html#feature-scores-catalog
-          - text: "Exemple PETS"
+          - text: "PETS example"
             href: feature_scores.html#feature-scores-example
       - 03_graft_classifier.ipynb
       - 04_visualization.ipynb
