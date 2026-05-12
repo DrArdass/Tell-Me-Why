@@ -104,7 +104,7 @@ class AAE(nn.Module):
         return self.recons_loss 
 
     def classif_loss_func(self, output, target, RECONS_WEIGHT, CLASS_WEIGHT, **kwargs):
-        alpha = 0.84
+        alpha = 0.84 # valeur empirique
         # Use self.input_image because there is no corruption here.
         l1_loss = F.l1_loss(self.decoder_output, self.input_image)
         ms_ssim_val = ms_ssim(self.decoder_output, self.input_image, data_range=1.0, size_average=True)

@@ -22,6 +22,7 @@ website:
             href: feature_scores.html#feature-scores-catalog
           - text: "PETS example"
             href: feature_scores.html#feature-scores-example
-      - 03_graft_classifier.ipynb
+      - text: "Add xAAEnet Blocks to a User Encoder"
+        href: user_encoder.html
       - 04_visualization.ipynb
       - 05_tutorial.ipynb
