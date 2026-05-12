@@ -1,5 +1,7 @@
 project:
   type: website
+  resources:
+    - images/**
 
 format:
   html:
@@ -12,9 +14,11 @@ format:
 website:
   twitter-card: true
   open-graph: true
+  favicon: images/logo_square.png
   repo-actions: [issue]
   navbar:
     background: primary
+    logo: images/logo_square.png
     search: true
   sidebar:
     style: floating
