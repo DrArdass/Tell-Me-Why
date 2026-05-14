@@ -87,45 +87,17 @@ class AAE(nn.Module):
         self.bn_crit1 = nn.BatchNorm1d(num_features=64)
         self.bn_crit2 = nn.BatchNorm1d(num_features=16)
 
-    def latent_gan(self, z: Tensor) -> Tensor:
-        x = F.leaky_relu(self.bn_crit1(self.fc_crit1(z)), negative_slope=0.2)
-        x = F.leaky_relu(self.bn_crit2(self.fc_crit2(x)),  negative_slope=0.2)
-        x = torch.sigmoid(self.fc_crit3(x)) 
+    def latent_gan(self, zi: Tensor) -> Tensor:
+        # Discriminator MLP without batch norm on hidden layers (matches colleague experiments).
+        x = F.leaky_relu(self.fc_crit1(zi), negative_slope=0.2)
+        x = F.leaky_relu(self.fc_crit2(x), negative_slope=0.2)
+        x = torch.sigmoid(self.fc_crit3(x))
         return x
-    
-    def denoising_ae_loss_func(self, clean_xb, pred, yb):
-        # pred and yb are ignored because this function is dedicated to denoising AE pretraining.
-        # fastai expects this loss-function signature even if not all arguments are used.
+
+    def aae_loss_func(self, output, target):
         alpha = 0.84
-        l1_loss = F.l1_loss(self.decoder_output, clean_xb)
-        ms_ssim_val = ms_ssim(self.decoder_output, clean_xb, data_range=1.0, size_average=True)
-        msssim_loss = 1.0 - ms_ssim_val
-        self.recons_loss = alpha * msssim_loss + (1.0 - alpha) * l1_loss
-        return self.recons_loss 
-
-    def classif_loss_func(self, output, target, RECONS_WEIGHT, CLASS_WEIGHT, **kwargs):
-        alpha = 0.84 # valeur empirique
-        # Use self.input_image because there is no corruption here.
-        l1_loss = F.l1_loss(self.decoder_output, self.input_image)
-        ms_ssim_val = ms_ssim(self.decoder_output, self.input_image, data_range=1.0, size_average=True)
-        msssim_loss = 1.0 - ms_ssim_val
-        self.recons_loss = alpha * msssim_loss + (1.0 - alpha) * l1_loss
-
-        # Store the attribute for LossAttrMetric.
-        self.classif_loss = F.cross_entropy(output, target, **kwargs)
-        
-        return CLASS_WEIGHT * F.cross_entropy(output, target, **kwargs) + RECONS_WEIGHT * self.recons_loss
     
-    def aae_loss_func(self, output, target, RECONS_WEIGHT, CLASS_WEIGHT, ADV_WEIGHT, **kwargs):
         adversarial_loss = nn.BCELoss()
-        alpha = 0.84
-        
-        # Use self.input_image here too.
-        l1_loss = F.l1_loss(self.decoder_output, self.input_image)
-        ms_ssim_val = ms_ssim(self.decoder_output, self.input_image, data_range=1.0, size_average=True)
-        msssim_loss = 1.0 - ms_ssim_val
-        self.recons_loss = alpha * msssim_loss + (1.0 - alpha) * l1_loss
-
         if self.gen_train: 
             valid = torch.ones_like(self.gan_fake, requires_grad=False).detach()
             self.adv_loss = adversarial_loss(self.gan_fake, valid)
@@ -138,11 +110,65 @@ class AAE(nn.Module):
             self.adv_loss = 0.6 * self.real_loss + 0.4 * self.fake_loss
             self.crit_loss = self.adv_loss
 
-        self.classif_loss = F.cross_entropy(output, target, **kwargs)
-
-        loss = ADV_WEIGHT * self.adv_loss + RECONS_WEIGHT * self.recons_loss + CLASS_WEIGHT * self.classif_loss
+        loss = self.adv_loss
             
         return loss
+
+    def denoising_ae_loss_func(self, clean_xb,RECONS_WEIGHT,ADV_WEIGHT, pred, yb):
+        # pred et yb sont ignorés car cette fonction est dédiée au pré-entraînement de l'AE en mode débruitage
+        # Fastai attend une signature de fonction de perte avec ces arguments, même si on ne les utilise pas tous
+        #Partie loss recon
+        alpha = 0.84
+        l1_loss = F.l1_loss(self.decoder_output, clean_xb)
+        ms_ssim_val = ms_ssim(self.decoder_output, clean_xb, data_range=1.0, size_average=True)
+        msssim_loss = 1.0 - ms_ssim_val
+        self.recons_loss = alpha * msssim_loss + (1.0 - alpha) * l1_loss
+        #partie loss adversarial
+        adversarial_loss = nn.BCELoss()
+        if self.gen_train: 
+            valid = torch.ones_like(self.gan_fake, requires_grad=False).detach()
+            self.adv_loss = adversarial_loss(self.gan_fake, valid)
+            self.crit_loss = 0
+        else:
+            valid = torch.ones_like(self.gan_real, requires_grad=False).detach()
+            fake = torch.zeros_like(self.gan_fake, requires_grad=False).detach()
+            self.real_loss = adversarial_loss(self.gan_real, valid)
+            self.fake_loss = adversarial_loss(self.gan_fake, fake)
+            self.adv_loss = 0.6 * self.real_loss + 0.4 * self.fake_loss
+            self.crit_loss = self.adv_loss
+        self.recons_loss = RECONS_WEIGHT* self.recons_loss + ADV_WEIGHT*self.adv_loss
+        
+        return self.recons_loss 
+
+    def classif_loss_func(self, output, target,ADV_WEIGHT, RECONS_WEIGHT, CLASS_WEIGHT, **kwargs):
+        alpha = 0.84
+        # On utilise self.input_image car il n'y a pas de corruption ici
+        l1_loss = F.l1_loss(self.decoder_output, self.input_image)
+        ms_ssim_val = ms_ssim(self.decoder_output, self.input_image, data_range=1.0, size_average=True)
+        msssim_loss = 1.0 - ms_ssim_val
+        self.recons_loss = alpha * msssim_loss + (1.0 - alpha) * l1_loss
+
+        # LOn sauvegarde l'attribut pour LossAttrMetric
+        self.classif_loss = F.cross_entropy(output, target, **kwargs)
+        #partie loss adversarial
+        adversarial_loss = nn.BCELoss()
+        if self.gen_train: 
+            valid = torch.ones_like(self.gan_fake, requires_grad=False).detach()
+            self.adv_loss = adversarial_loss(self.gan_fake, valid)
+            self.crit_loss = 0
+        else:
+            valid = torch.ones_like(self.gan_real, requires_grad=False).detach()
+            fake = torch.zeros_like(self.gan_fake, requires_grad=False).detach()
+            self.real_loss = adversarial_loss(self.gan_real, valid)
+            self.fake_loss = adversarial_loss(self.gan_fake, fake)
+            self.adv_loss = 0.6 * self.real_loss + 0.4 * self.fake_loss
+            self.crit_loss = self.adv_loss
+
+        loss = ADV_WEIGHT * self.adv_loss + RECONS_WEIGHT * self.recons_loss + CLASS_WEIGHT * self.classif_loss
+        return loss
+
+    def pure_classif_loss_func(self, pred, target, **kwargs):
+        return F.cross_entropy(pred, target, **kwargs)
 
     def forward(self, x):
         self.input_image = x
@@ -157,10 +183,10 @@ class AAE(nn.Module):
         # STEP 2: AAE BOTTLENECK
         # =========================================================
         flat = self.flatten(feats)
-        self.z = F.leaky_relu(self.bn_lin(self.fc_encode(flat)), negative_slope=0.2)
-        
+        self.z = self.fc_encode(flat)
+
         labels = self.linear(self.z)
-        
+
         self.gan_fake = self.latent_gan(self.z)
         z_random = torch.randn_like(self.z)
         self.gan_real = self.latent_gan(z_random)
