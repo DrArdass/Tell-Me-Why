@@ -18,7 +18,6 @@ website:
   repo-actions: [issue]
   navbar:
     background: primary
-    logo: images/logo_square.png
     search: true
   sidebar:
     style: floating
