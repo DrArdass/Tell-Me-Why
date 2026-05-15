@@ -23,5 +23,5 @@ website:
             href: feature_scores.html#feature-scores-example
       - text: "Add xAAEnet Blocks to a User Encoder"
         href: user_encoder.html
-      - 04_visualization.ipynb
+      - 05_visualization.ipynb
       - 06_tutorial.ipynb
