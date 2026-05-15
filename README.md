@@ -35,7 +35,9 @@ must be made in the notebooks.
   reuse in analyses.
 - `03_user_encoder.ipynb`: logic for adding xAAEnet blocks to a
   user-provided binary classifier encoder.
-- `04_visualization.ipynb`: visualizations of the latent space and
+- `04_training.ipynb`: `train_xaaenet` and training callbacks
+  (adversarial → autoencoder → classifier).
+- `05_visualization.ipynb`: visualizations of the latent space and
   feature scores.
 - `06_tutorial.ipynb`: complete example of how to use the library,
   without any requirement to export code.
@@ -48,7 +50,8 @@ add the analysis building blocks one by one.
 1.  Finalize and export `01_model_aae.ipynb`.
 2.  Add reusable scores in `02_feature_scores.ipynb`.
 3.  Define the user-encoder interface in `03_user_encoder.ipynb`.
-4.  Connect binary-classification/feature-score visualizations in
-    `04_visualization.ipynb`.
-5.  Turn `06_tutorial.ipynb` into a user walkthrough once the previous
+4.  Document the three-phase training workflow in `04_training.ipynb`.
+5.  Connect binary-classification/feature-score visualizations in
+    `05_visualization.ipynb`.
+6.  Turn `06_tutorial.ipynb` into a user walkthrough once the previous
     modules are usable.
