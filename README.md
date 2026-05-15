@@ -32,7 +32,7 @@ must be made in the notebooks.
   user-provided binary classifier encoder.
 - `04_visualization.ipynb`: visualizations of the latent space and
   feature scores.
-- `05_tutorial.ipynb`: complete example of how to use the library,
+- `06_tutorial.ipynb`: complete example of how to use the library,
   without any requirement to export code.
 
 ## Development Priority
@@ -45,5 +45,5 @@ add the analysis building blocks one by one.
 3.  Define the user-encoder interface in `03_user_encoder.ipynb`.
 4.  Connect binary-classification/feature-score visualizations in
     `04_visualization.ipynb`.
-5.  Turn `05_tutorial.ipynb` into a user walkthrough once the previous
+5.  Turn `06_tutorial.ipynb` into a user walkthrough once the previous
     modules are usable.

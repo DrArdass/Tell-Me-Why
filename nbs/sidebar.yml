@@ -2,7 +2,6 @@ website:
   sidebar:
     contents:
       - index.ipynb
-      - 00_init.ipynb
       - 01_model_aae.ipynb
       - section: "Feature scores"
         contents:
@@ -25,4 +24,4 @@ website:
       - text: "Add xAAEnet Blocks to a User Encoder"
         href: user_encoder.html
       - 04_visualization.ipynb
-      - 05_tutorial.ipynb
+      - 06_tutorial.ipynb
