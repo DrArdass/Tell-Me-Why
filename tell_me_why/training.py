@@ -25,8 +25,7 @@ ExplainableModel = AAE | EncoderWithAAEBlocks
 
 # %% auto #0
 __all__ = ['ExplainableModel', 'AddGaussianNoise', 'RandomMasking', 'CorruptionCallback', 'UnfreezeFcCritAdaptative',
-           'GetLatentSpace', 'LossAttrMetric', 'save_latent_tsne_figure', 'save_latent_pls_classif_figure',
-           'train_xaaenet']
+           'GetLatentSpace', 'LossAttrMetric', 'save_latent_tsne_figure', 'save_latent_pls_figure', 'train_xaaenet']
 
 # %% ../nbs/04_training.ipynb #e575f79b
 class AddGaussianNoise(Transform):
@@ -183,6 +182,19 @@ def _extract_latent_vectors(learn: Learner, ds_idx: int = 1) -> torch.Tensor:
     return z
 
 
+def _display_figure(fig, *, show: bool | None = None) -> None:
+    """Show *fig* inline in IPython (notebook); no-op in plain scripts unless ``show=True``."""
+    if show is False:
+        return
+    try:
+        from IPython import get_ipython
+        from IPython.display import display
+    except ImportError:
+        return
+    if show is True or get_ipython() is not None:
+        display(fig)
+
+
 def save_latent_tsne_figure(
     z: torch.Tensor,
     save_path: str | Path,
@@ -192,8 +204,9 @@ def save_latent_tsne_figure(
     max_points: int = 5000,
     perplexity: float = 30,
     random_state: int = 42,
+    show: bool | None = None,
 ) -> Path:
-    """Project latent vectors with t-SNE and save a scatter plot PNG."""
+    """Project ``z`` with t-SNE, display inline in a notebook, then save a PNG."""
     import matplotlib.pyplot as plt
     from sklearn.manifold import TSNE
 
@@ -223,6 +236,7 @@ def save_latent_tsne_figure(
         spine.set_color("#444")
     ax.grid(True, alpha=0.15, color="#666")
     fig.tight_layout()
+    _display_figure(fig, show=show)
     save_path = Path(save_path)
     save_path.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(save_path, dpi=200, facecolor=fig.get_facecolor(), bbox_inches="tight")
@@ -231,18 +245,20 @@ def save_latent_tsne_figure(
     return save_path
 
 
-def save_latent_pls_classif_figure(
+def save_latent_pls_figure(
     z: torch.Tensor,
     targets: torch.Tensor,
     save_path: str | Path,
     *,
     class_names: Sequence[str] | None = None,
-    positive_class: str | None = None,
+    target_class: str | None = None,
+    phase: str = "",
     encoding_dims: int | None = None,
     max_points: int = 10_000,
     random_state: int = 42,
+    show: bool | None = None,
 ) -> Path:
-    """Supervised PLS biplot of latent `z` with one arrow for the classification direction."""
+    """Supervised PLS biplot of ``z`` vs binary targets: display inline in a notebook, then save a PNG."""
     import matplotlib.pyplot as plt
     import scipy.stats as stats
     from sklearn.cross_decomposition import PLSRegression
@@ -251,8 +267,8 @@ def save_latent_pls_classif_figure(
     y_idx = targets.numpy() if isinstance(targets, torch.Tensor) else np.asarray(targets).reshape(-1)
     names = list(class_names) if class_names is not None else ["0", "1"]
     if len(names) != 2:
-        raise ValueError("save_latent_pls_classif_figure expects a binary vocabulary with two classes.")
-    pos_idx = names.index(positive_class) if positive_class is not None else 1
+        raise ValueError("save_latent_pls_figure expects exactly two class names (binary targets).")
+    pos_idx = names.index(target_class) if target_class is not None else 1
     y_score = (y_idx == pos_idx).astype(np.float64)
 
     n_total = len(Z)
@@ -302,9 +318,10 @@ def save_latent_pls_classif_figure(
     )
     ax.axhline(my, color="#30363d", linestyle="--", linewidth=1)
     ax.axvline(mx, color="#30363d", linestyle="--", linewidth=1)
+    phase_line = f" · {phase}" if phase else ""
     ax.set_title(
-        f"Espace PLS — direction de classification '{target_label}'\n"
-        f"latent {enc}D → 2D · N={len(Z)} points",
+        f"Espace PLS — direction cible '{target_label}'\n"
+        f"latent {enc}D → 2D · N={len(Z)} points{phase_line}",
         color="white",
         fontsize=14,
         pad=16,
@@ -316,12 +333,69 @@ def save_latent_pls_classif_figure(
         spine.set_edgecolor("#30363d")
     ax.grid(True, linestyle=":", color="#30363d", alpha=0.5)
     fig.tight_layout()
+    _display_figure(fig, show=show)
     save_path = Path(save_path)
     save_path.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(save_path, dpi=200, bbox_inches="tight", facecolor=fig.get_facecolor())
     plt.close(fig)
-    print(f"PLS classification figure saved: {save_path}")
+    print(f"PLS figure saved: {save_path}")
     return save_path
+
+
+#| hide
+def _tsne_validation_latent_after_phase(
+    learn: Learner,
+    save_path: str | Path,
+    *,
+    phase: str,
+    encoding_dims: int | None,
+    max_points: int,
+    perplexity: float,
+    show: bool | None,
+) -> torch.Tensor:
+    """Extract validation ``z``, show t-SNE in the notebook, save PNG; return ``z``."""
+    print(f"Latent z — validation ({phase})")
+    z_val = _extract_latent_vectors(learn)
+    print(f"  shape: {tuple(z_val.shape)}")
+    save_latent_tsne_figure(
+        z_val,
+        save_path,
+        phase=phase,
+        encoding_dims=encoding_dims,
+        max_points=max_points,
+        perplexity=perplexity,
+        show=show,
+    )
+    return z_val
+
+
+def _pls_validation_latent_after_phase(
+    learn: Learner,
+    save_path: str | Path,
+    dls: DataLoaders,
+    *,
+    phase: str,
+    target_class: str | None,
+    encoding_dims: int | None,
+    max_points: int,
+    show: bool | None,
+) -> tuple[torch.Tensor, torch.Tensor]:
+    """Extract validation ``z`` and targets, show PLS in the notebook, save PNG; return ``(z, targets)``."""
+    print(f"Latent z — validation ({phase})")
+    z_val, targs_val = _extract_latent_and_targets(learn, ds_idx=1)
+    print(f"  shape: {tuple(z_val.shape)}")
+    save_latent_pls_figure(
+        z_val,
+        targs_val,
+        save_path,
+        class_names=tuple(dls.vocab),
+        target_class=target_class,
+        phase=phase,
+        encoding_dims=encoding_dims,
+        max_points=max_points,
+        show=show,
+    )
+    return z_val, targs_val
 
 # %% ../nbs/04_training.ipynb #376d4b10
 def _aae_splitter(model: nn.Module):
@@ -400,11 +474,12 @@ def train_xaaenet(
     save_tsne: bool = True,
     tsne_max_points: int = 5000,
     tsne_perplexity: float = 30,
-    save_pls_classif: bool = True,
-    pls_positive_class: str | None = None,
+    save_pls: bool = True,
+    pls_target_class: str | None = None,
     pls_max_points: int = 10_000,
     extract_latent: bool = True,
     latent_path: str | Path | None = None,
+    show_latent_figures: bool | None = None,
 ) -> Learner:
     """Train an explainable xAAEnet model: adversarial, then autoencoder, then classifier.
 
@@ -424,14 +499,16 @@ def train_xaaenet(
         If True, save t-SNE figures after the adversarial and autoencoder phases.
     tsne_max_points, tsne_perplexity
         Subsample size and perplexity for those t-SNE plots.
-    save_pls_classif
-        If True, save a PLS biplot after classifier training (direction of the positive class only).
-    pls_positive_class
-        Name of the positive class in `dls.vocab` (default: second class).
+    save_pls
+        If True, after the classifier phase extract validation ``z``, show a supervised PLS biplot, save PNG.
+    pls_target_class
+        Name of the binary target level in `dls.vocab` for the PLS axis (default: second class).
     pls_max_points
         Cap on validation points for the PLS figure (default: 10_000).
     extract_latent
         If True, save stacked train+valid latent vectors to `latent_path` (or a default under `models_dir`).
+    show_latent_figures
+        If not False, display t-SNE / PLS figures inline when running inside a notebook (before saving PNG).
     """
     models_dir = Path(models_dir)
     models_dir.mkdir(parents=True, exist_ok=True)
@@ -456,14 +533,14 @@ def train_xaaenet(
     )
     _load_checkpoint(model, models_dir, adv_fname)
     if save_tsne:
-        enc = getattr(model, "encoding_dims", None)
-        save_latent_tsne_figure(
-            _extract_latent_vectors(learn),
+        _tsne_validation_latent_after_phase(
+            learn,
             models_dir / f"tsne_{adv_fname}.png",
             phase="adversarial",
-            encoding_dims=enc,
+            encoding_dims=getattr(model, "encoding_dims", None),
             max_points=tsne_max_points,
             perplexity=tsne_perplexity,
+            show=show_latent_figures,
         )
 
     print("Phase 2/3 — autoencoder training")
@@ -479,14 +556,14 @@ def train_xaaenet(
     learn.fit_one_cycle(epochs_ae, lr_max=lr_head, cbs=fit_cbs + [SaveModelCallback(fname=ae_fname)])
     _load_checkpoint(model, models_dir, ae_fname)
     if save_tsne:
-        enc = getattr(model, "encoding_dims", None)
-        save_latent_tsne_figure(
-            _extract_latent_vectors(learn),
+        _tsne_validation_latent_after_phase(
+            learn,
             models_dir / f"tsne_{ae_fname}.png",
             phase="autoencoder",
-            encoding_dims=enc,
+            encoding_dims=getattr(model, "encoding_dims", None),
             max_points=tsne_max_points,
             perplexity=tsne_perplexity,
+            show=show_latent_figures,
         )
 
     print("Phase 3/3 — classifier training")
@@ -510,16 +587,16 @@ def train_xaaenet(
     learn.load(classif_fname, with_opt=False, strict=False)
 
     torch.save(model.state_dict(), models_dir / f"{classif_fname}_final.pth")
-    if save_pls_classif:
-        z_val, targs_val = _extract_latent_and_targets(learn, ds_idx=1)
-        save_latent_pls_classif_figure(
-            z_val,
-            targs_val,
+    if save_pls:
+        _pls_validation_latent_after_phase(
+            learn,
             models_dir / f"pls_{classif_fname}.png",
-            class_names=tuple(dls.vocab),
-            positive_class=pls_positive_class,
+            dls,
+            phase="classifier",
+            target_class=pls_target_class,
             encoding_dims=getattr(model, "encoding_dims", None),
             max_points=pls_max_points,
+            show=show_latent_figures,
         )
     if extract_latent:
         z_parts = []

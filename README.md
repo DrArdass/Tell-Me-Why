@@ -37,8 +37,9 @@ must be made in the notebooks.
   user-provided binary classifier encoder.
 - `04_training.ipynb`: `train_xaaenet` and training callbacks
   (adversarial → autoencoder → classifier).
-- `05_visualization.ipynb`: visualizations of the latent space and
-  feature scores.
+- `05_visualization.ipynb` (Classification Interpretation): alignment
+  panels and feature-importance ranking from latent `z` and feature
+  scores.
 - `06_tutorial.ipynb`: complete example of how to use the library,
   without any requirement to export code.
 
