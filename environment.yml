@@ -1,4 +1,6 @@
 name: tell-me-why
+variables:
+  KMP_DUPLICATE_LIB_OK: "TRUE"
 channels:
   - fastai
   - pytorch

@@ -25,4 +25,4 @@ website:
         href: user_encoder.html
       - 04_training.ipynb
       - 05_visualization.ipynb
-      - 06_tutorial.ipynb
+      - 06_walkthrough.ipynb
