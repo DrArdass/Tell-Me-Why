@@ -33,6 +33,9 @@ jobs:
       - name: Install Quarto
         run: nbdev-install-quarto
 
+      - name: Preserve hand-written README
+        run: touch README.md
+
       - name: Build nbdev docs
         run: nbdev-docs
 
