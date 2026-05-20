@@ -19,8 +19,6 @@ website:
             href: feature_scores.html#feature-scores-frequency
           - text: "Catalog"
             href: feature_scores.html#feature-scores-catalog
-          - text: "PETS example"
-            href: feature_scores.html#feature-scores-example
       - text: "Add xAAEnet Blocks to a User Encoder"
         href: user_encoder.html
       - 04_training.ipynb
