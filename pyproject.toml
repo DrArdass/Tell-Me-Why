@@ -5,12 +5,12 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "tell-me-why"
 dynamic = ["version"]
-description = "Graft custom classifiers onto an adversarial autoencoder and visualize latent/features spaces."
+description = "Explainable xAAEnet training and interpretation for binary image classifiers."
 readme = "README.md"
 requires-python = ">=3.10,<3.13"
 license = {text = "MIT"}
 authors = [{name = "Tell Me Why contributors"}]
-keywords = ['nbdev', 'pytorch', 'adversarial-autoencoder', 'classifier', 'latent-space']
+keywords = ['pytorch', 'fastai', 'adversarial-autoencoder', 'explainability', 'binary-classification', 'feature-scores']
 classifiers = ["Natural Language :: English", "Intended Audience :: Developers", "Development Status :: 3 - Alpha", "Programming Language :: Python :: 3", "Programming Language :: Python :: 3 :: Only"]
 dependencies = [
     "torch>=2.4",
