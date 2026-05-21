@@ -405,8 +405,12 @@ def _aae_splitter(model: nn.Module):
     return [backbone, head, crit]
 
 
-def _load_checkpoint(model: nn.Module, models_dir: Path, fname: str) -> None:
-    path = models_dir / f"{fname}.pth"
+def _checkpoint_path(learn: Learner, fname: str) -> Path:
+    return learn.path / learn.model_dir / f"{fname}.pth"
+
+
+def _load_checkpoint(model: nn.Module, learn: Learner, fname: str) -> None:
+    path = _checkpoint_path(learn, fname)
     if not path.exists():
         raise FileNotFoundError(f"Checkpoint not found: {path}")
     state = torch.load(path, map_location=default_device(), weights_only=True)
@@ -467,7 +471,6 @@ def train_xaaenet(
     adv_high_threshold: float = 0.80,
     grad_accum: int = 4,
     patience: int = 10,
-    models_dir: str | Path = "models",
     adv_fname: str = "xaaenet_adv",
     ae_fname: str = "xaaenet_ae",
     classif_fname: str = "xaaenet_classif",
@@ -478,7 +481,6 @@ def train_xaaenet(
     pls_target_class: str | None = None,
     pls_max_points: int = 10_000,
     extract_latent: bool = True,
-    latent_path: str | Path | None = None,
     show_latent_figures: bool | None = None,
 ) -> Learner:
     """Train an explainable xAAEnet model: adversarial, then autoencoder, then classifier.
@@ -506,12 +508,13 @@ def train_xaaenet(
     pls_max_points
         Cap on validation points for the PLS figure (default: 10_000).
     extract_latent
-        If True, save stacked train+valid latent vectors to `latent_path` (or a default under `models_dir`).
+        If True, save stacked train+valid latent vectors next to checkpoints (fastai ``learn.path`` / ``learn.model_dir``).
     show_latent_figures
         If not False, display t-SNE / PLS figures inline when running inside a notebook (before saving PNG).
+
+    Checkpoints use the fastai ``Learner`` defaults: ``learn.path / learn.model_dir / {fname}.pth``
+    (typically ``{dls.path}/models/`` or ``./models/``).
     """
-    models_dir = Path(models_dir)
-    models_dir.mkdir(parents=True, exist_ok=True)
     model = model.to(default_device())
     lr_head = lr_max / lr_max_factor
     fit_cbs = [
@@ -531,11 +534,11 @@ def train_xaaenet(
             UnfreezeFcCritAdaptative(low_threshold=adv_low_threshold, high_threshold=adv_high_threshold),
         ],
     )
-    _load_checkpoint(model, models_dir, adv_fname)
+    _load_checkpoint(model, learn, adv_fname)
     if save_tsne:
         _tsne_validation_latent_after_phase(
             learn,
-            models_dir / f"tsne_{adv_fname}.png",
+            learn.path / learn.model_dir / f"tsne_{adv_fname}.png",
             phase="adversarial",
             encoding_dims=getattr(model, "encoding_dims", None),
             max_points=tsne_max_points,
@@ -554,11 +557,11 @@ def train_xaaenet(
     )
     corruption_cb.learn = learn
     learn.fit_one_cycle(epochs_ae, lr_max=lr_head, cbs=fit_cbs + [SaveModelCallback(fname=ae_fname)])
-    _load_checkpoint(model, models_dir, ae_fname)
+    _load_checkpoint(model, learn, ae_fname)
     if save_tsne:
         _tsne_validation_latent_after_phase(
             learn,
-            models_dir / f"tsne_{ae_fname}.png",
+            learn.path / learn.model_dir / f"tsne_{ae_fname}.png",
             phase="autoencoder",
             encoding_dims=getattr(model, "encoding_dims", None),
             max_points=tsne_max_points,
@@ -586,11 +589,11 @@ def train_xaaenet(
     )
     learn.load(classif_fname, with_opt=False, strict=False)
 
-    torch.save(model.state_dict(), models_dir / f"{classif_fname}_final.pth")
+    torch.save(model.state_dict(), learn.path / learn.model_dir / f"{classif_fname}_final.pth")
     if save_pls:
         _pls_validation_latent_after_phase(
             learn,
-            models_dir / f"pls_{classif_fname}.png",
+            learn.path / learn.model_dir / f"pls_{classif_fname}.png",
             dls,
             phase="classifier",
             target_class=pls_target_class,
@@ -605,6 +608,5 @@ def train_xaaenet(
             learn.get_preds(ds_idx=ds_idx, cbs=[GetLatentSpace()])
             z_parts.append(learn.z_valid.clone())
         z_all = torch.vstack(z_parts)
-        latent_path = latent_path or models_dir / f"{classif_fname}_z.pt"
-        torch.save(z_all, latent_path)
+        torch.save(z_all, learn.path / learn.model_dir / f"{classif_fname}_z.pt")
     return learn

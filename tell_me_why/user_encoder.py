@@ -53,6 +53,9 @@ class EncoderWithAAEBlocks(nn.Module):
         freeze_encoder: bool = False,
     ):
         super().__init__()
+        assert classes == 2, (
+            "tell_me_why supports binary image classification only; classes must be 2."
+        )
         self.gen_train = gen_train
         self.input_size = input_size
         self.input_channels = input_channels

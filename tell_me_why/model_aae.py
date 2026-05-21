@@ -16,6 +16,13 @@ from fastai.callback.hook import *
 from fastai.torch_core import TensorBase
 from pytorch_msssim import ms_ssim
 
+
+def _module_device(module: nn.Module) -> torch.device:
+    try:
+        return next(module.parameters()).device
+    except StopIteration:
+        return torch.device("cpu")
+
 # %% ../nbs/01_model_aae.ipynb #a938d613
 class AAE(nn.Module):
     """Adversarial autoencoder used by xAAEnet.
@@ -34,7 +41,7 @@ class AAE(nn.Module):
     encoding_dims : int, default=128
         Dimension of the latent representation `z`.
     classes : int, default=2
-        Number of output classes for the classifier head.
+        Number of output classes for the classifier head (must be 2; binary only).
     gen_train : bool, default=True
         Whether the adversarial step trains the generator side of the AAE.
     skip_dropout : float, default=1
@@ -51,10 +58,16 @@ class AAE(nn.Module):
         skip_dropout=1 # Replaces skip_weight with skip_dropout
     ):
         super(AAE, self).__init__()
+        assert classes == 2, (
+            "tell_me_why supports binary image classification only; classes must be 2."
+        )
 
         self.gen_train = gen_train
         self.count_acc = 1
         self.classes = classes
+        self.input_size = input_size
+        self.input_channels = input_channels
+        self.encoding_dims = encoding_dims
         
         # A. Base encoder
         encoder_base = nn.Sequential(*list(resnet34(weights=ResNet34_Weights.DEFAULT).children())[:-2])
@@ -68,9 +81,10 @@ class AAE(nn.Module):
             last_cross=False # Crucial: disables the source-image residual connection at the output
         )
         
-        # B. xAI bottleneck
-        flat_features = 512 * 8 * 8
+        # B. xAI bottleneck (feature map size depends on input_size)
         self.flatten = nn.Flatten()
+        self.encoder_feature_shape = self._infer_encoder_feature_shape()
+        flat_features = int(torch.tensor(self.encoder_feature_shape).prod().item())
         
         self.fc_encode = nn.Linear(flat_features, encoding_dims)
         self.bn_lin = nn.BatchNorm1d(num_features=encoding_dims)
@@ -86,6 +100,19 @@ class AAE(nn.Module):
 
         self.bn_crit1 = nn.BatchNorm1d(num_features=64)
         self.bn_crit2 = nn.BatchNorm1d(num_features=16)
+
+    def _infer_encoder_feature_shape(self) -> tuple[int, ...]:
+        encoder = self.unet.layers[0]
+        was_training = encoder.training
+        device = _module_device(encoder)
+        try:
+            encoder.eval()
+            with torch.no_grad():
+                sample = torch.zeros(1, self.input_channels, self.input_size, self.input_size, device=device)
+                features = encoder(sample)
+        finally:
+            encoder.train(was_training)
+        return tuple(features.shape[1:])
 
     def latent_gan(self, zi: Tensor) -> Tensor:
         # Discriminator MLP without batch norm on hidden layers (matches colleague experiments).
@@ -195,7 +222,7 @@ class AAE(nn.Module):
         # STEP 3: DECODER
         # =========================================================
         z_spatial = F.relu(self.decoder_fc(self.z))
-        z_spatial = z_spatial.view(-1, 512, 8, 8) 
+        z_spatial = z_spatial.view(-1, *self.encoder_feature_shape) 
         
         out = TensorBase(z_spatial)
         
