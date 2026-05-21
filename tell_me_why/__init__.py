@@ -6,4 +6,4 @@
 __all__ = []
 
 # %% ../nbs/00_init.ipynb #54aff831
-__version__ = "0.0.1"
+__version__ = "0.0.2"
