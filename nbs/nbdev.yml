@@ -3,7 +3,7 @@ project:
 
 website:
   title: "Tell Me Why"
-  site-url: "https://tell-me-why-xai.github.io/Tell-Me-Why"
-  description: "Graft custom classifiers onto an adversarial autoencoder and visualize latent/features spaces."
+  site-url: "https://tell-me-why-xai.github.io/"
+  description: "Explainable xAAEnet training and interpretation for binary image classifiers."
   repo-branch: main
-  repo-url: "https://github.com/Tell-Me-Why-xAI/Tell-Me-Why"
+  repo-url: "https://github.com/Tell-Me-Why-xAI/tell-me-why-xai.github.io"
